@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ini to YAML</title>
+  <style>
+    textarea {
+      width: 100%;
+      height: 300px;
+    }
+  </style>
+</head>
+
+<body>
+  {% load static %}
+  <div id="demo">
+    <form method="post" enctype="multipart/form-data">
+      <h2>YAML File</h2>
+      {% csrf_token %}
+      <textarea id="yamlContent" name="yaml_content" rows="5" cols="50"></textarea>
+      <button type="button" onclick="generateYAML()">Generate</button>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="iniContent"></div>
+  </div>
+
+  <script>
+    let yamlContent = ""; // Declare and initialize yamlContent variable
+
+    function generateYAML() {
+      const yamlTextArea = document.getElementById("yamlContent");
+      //thats cool but I want it to count the whitespaces an assign selectedSections to the one with 0 white space
+      const selectedSections = yamlTextArea.value.trim().split(/\r?\n/)
+        .map(line => line.trim().replace(/:$/, ''));
+
+      console.log(selectedSections);
+
+      yamlContent = ""; // Reset yamlContent for each generateYAML call
+
+      const xhttp = new XMLHttpRequest();
+      xhttp.onload = function () {
+        const iniData = this.responseText;
+        //data came from the ini file without spacing before
+        const lines = iniData.split(/\r?\n/);
+
+        let currentSection = null;
+        let sectionStarted = false;
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+
+
+          if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
+            // Extract the section name without brackets
+            currentSection = trimmedLine.substring(1, trimmedLine.length - 1).trim();
+            sectionStarted = selectedSections.includes(currentSection); //el ini section included in the textarea
+
+
+            if (sectionStarted) {
+              yamlContent += `<br> \n [${currentSection}]\n`; //cool
+            }
+
+          } else if (sectionStarted) {
+            const [key, value] = trimmedLine.split("=");
+            const trimmedKey = key.trim();
+            const trimmedValue = value ? value.trim() : '';
+
+            if (trimmedKey === "FORMAT Index") {
+              const words = trimmedValue.split(", ");
+              for (const w of words) {
+                if (selectedSections.includes(w)) {
+                  console.log(w);
+                  const isHighlighted = selectedSections.includes(w);
+                  if (isHighlighted) {
+                    yamlContent += `<br>  <span style="background-color: yellow">${w} = Changable </span>`;
+                  } else {
+                    yamlContent += ` <br> ${trimmedKey}= ${trimmedValue}`;
+                  }
+                }
+              }
+
+            } else if (trimmedKey && trimmedValue) {
+              // Check if the trimmedKey is present in the selectedSections
+              const isHighlighted = selectedSections.includes(trimmedKey);
+              if (isHighlighted) {
+                yamlContent += `<br>  <span style="background-color: yellow">${trimmedKey} = Changable </span>`;
+              } else {
+                yamlContent += ` <br> ${trimmedKey}= ${trimmedValue}`;
+              }
+
+            }
+
+          }
+        }
+
+        document.getElementById("iniContent").innerHTML = yamlContent;
+
+      };
+
+      xhttp.open("GET", "{% static 'file.ini' %}", true);
+      xhttp.send();
+    }
+  </script>
+</body>
+
+</html>

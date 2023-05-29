@@ -1,0 +1,7 @@
+BSP Params:
+  ExitCpuOverloadPercent:
+    lable: Hola
+  PCMLawSelect:
+    label: Enter
+ControlProtocols Params:
+  AdminStateLockControl: null
