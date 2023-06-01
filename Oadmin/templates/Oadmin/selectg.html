@@ -22,6 +22,7 @@
       {% csrf_token %}
       <textarea id="yamlContent" name="yaml_content" rows="5" cols="50"></textarea>
       <button type="button" onclick="generateYAML()">Generate</button>
+      <button type="button" onclick="fullini()">Generate full Ini</button>
       <button type="submit">Submit</button>
     </form>
     <div id="iniContent"></div>
@@ -100,9 +101,56 @@
 
       };
 
+
+
       xhttp.open("GET", "{% static 'file.ini' %}", true);
       xhttp.send();
     }
+
+    // full ini function 
+    let yaml_content2 = "" //for the full ini
+
+    function fullini() {
+  const yamlTextArea = document.getElementById("yamlContent");
+  const selectedSections = yamlTextArea.value.trim().split(/\r?\n/)
+    .map(line => line.trim().replace(/:$/, ''));
+
+  console.log(selectedSections);
+
+  let yamlContent2 = ""; // Reset yamlContent2 for each generateYAML call
+
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function () {
+    const iniData = this.responseText;
+    const lines = iniData.split(/\r?\n/);
+
+    for (const line of lines) {
+      let highlightedLine = line;
+
+      // Check if the line contains any selected section
+      for (const section of selectedSections) {
+        if (line.includes(`${section}`)) {
+          
+          // Wrap the line in a span with a yellow background color
+          highlightedLine = `<span style="background-color: yellow">${line}</span>`;
+          break; // No need to check further, as the section is already highlighted
+        }
+        
+      }
+
+      yamlContent2 += `${highlightedLine}<br>\n`;
+    }
+
+    document.getElementById("iniContent").innerHTML = yamlContent2;
+  };
+
+  xhttp.open("GET", "{% static 'file.ini' %}", true);
+  xhttp.send();
+}
+
+
+
+
   </script>
 </body>
 
